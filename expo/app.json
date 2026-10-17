@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "Untitled",
+    "slug": "pfc53453d69fa4fbe824455c81f16392c",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "scheme": "pfc53453d69fa4fbe824455c81f16392c",
+    "platforms": ["ios", "android", "web"],
+    "ios": {
+      "supportsTablet": true,
+      "requireFullScreen": true,
+      "bundleIdentifier": "app.lovable.pfc53453d69fa4fbe824455c81f16392c"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-asset",
+      "expo-status-bar",
+      "expo-web-browser"
+    ],
+    "android": {
+      "package": "app.lovable.pfc53453d69fa4fbe824455c81f16392c"
+    }
+  }
+}
