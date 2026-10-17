@@ -1,5 +1,6 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect } from "react";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -7,6 +8,7 @@ import { Header } from "@/components/screen";
 import { Text } from "@/components/ui/Text";
 import { useAuth } from "@/lib/auth";
 import { backend } from "@/lib/backend";
+import { addRecent, getBestScores } from "@/lib/progress";
 
 const DIFFICULTIES = [
   { key: "easy", label: "Easy", note: "30 questions · fundamentals" },
@@ -19,6 +21,16 @@ export default function SubjectHub() {
   const insets = useSafeAreaInsets();
   const { profile } = useAuth();
   const university = profile?.university ?? "";
+
+  const [best, setBest] = useState<Record<string, number>>({});
+  useFocusEffect(
+    useCallback(() => {
+      if (name) getBestScores(name).then(setBest);
+    }, [name]),
+  );
+  useEffect(() => {
+    if (name) void addRecent({ name, code: code ?? "", credits: credits ?? "" }).catch(() => {});
+  }, [name, code, credits]);
 
   // Start preparing the most-used material in the background so it is ready when tapped.
   useEffect(() => {
@@ -46,7 +58,7 @@ export default function SubjectHub() {
           <Tile
             key={d.key}
             title={d.label}
-            note={d.note}
+            note={best[d.key] !== undefined ? `${d.note} · Best: ${best[d.key]}%` : d.note}
             onPress={() => router.push({ pathname: "/quiz", params: { name, difficulty: d.key } })}
           />
         ))}

@@ -7,6 +7,7 @@ import { ErrorState, Header, LoadingNote, SkeletonList } from "@/components/scre
 import { Button } from "@/components/ui/Button";
 import { Text } from "@/components/ui/Text";
 import { useAuth } from "@/lib/auth";
+import { recordScore } from "@/lib/progress";
 import { backend, friendlyError, useRequest, type Insights } from "@/lib/backend";
 
 export default function Quiz() {
@@ -45,6 +46,9 @@ export default function Quiz() {
           isCorrect: c === qq.correctIndex,
         };
       });
+      if (results.length > 0) {
+        void recordScore(name, difficulty, Math.round((correctCount / results.length) * 100)).catch(() => {});
+      }
       setInsights(await backend.insights(university, name, difficulty, results));
     } catch (e) {
       setInsightError(`We couldn't create your score prediction. ${friendlyError(e)}`);
