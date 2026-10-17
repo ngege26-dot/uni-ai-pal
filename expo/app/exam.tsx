@@ -22,7 +22,7 @@ export default function Exam() {
   const [slots, setSlots] = useState<Record<number, Slot>>({});
 
   const update = (i: number, patch: Partial<Slot>) =>
-    setSlots((s) => ({ ...s, [i]: { answer: "", grading: false, ...s[i], ...patch } }));
+    setSlots((s) => ({ ...s, [i]: { ...(s[i] ?? { answer: "", grading: false }), ...patch } }));
 
   const submit = async (i: number) => {
     const q = exam?.questions[i];
