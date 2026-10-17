@@ -1,14 +1,12 @@
+import { Redirect } from "expo-router";
 import { View } from "react-native";
 
-import { Text } from "@/components/ui/Text";
+import { useAuth } from "@/lib/auth";
 
-export default function HomeScreen() {
-  return (
-    <View className="flex-1 items-center justify-center bg-background p-6">
-      <Text variant="title" className="mb-3 text-center">
-        Your app will live here
-      </Text>
-      <Text className="text-center text-muted-foreground">Ask Lovable to build it</Text>
-    </View>
-  );
+export default function Index() {
+  const { session, profile, ready } = useAuth();
+  if (!ready) return <View className="flex-1 bg-background" />;
+  if (!session) return <Redirect href="/sign-in" />;
+  if (!profile?.university || !profile?.major) return <Redirect href="/onboarding" />;
+  return <Redirect href="/subjects" />;
 }
