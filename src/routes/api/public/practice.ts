@@ -21,8 +21,8 @@ const schema = z.object({
   ),
 });
 
-const BATCHES = 3;
-const PER_BATCH = 10;
+const BATCHES = 6;
+const PER_BATCH = 5;
 
 export const Route = createFileRoute("/api/public/practice")({
   server: {
@@ -36,7 +36,7 @@ export const Route = createFileRoute("/api/public/practice")({
                 request,
                 schema,
                 "You write excellent university exam practice questions with precise feedback.",
-                `Course: ${body.subject} at ${body.university}. Difficulty: ${body.difficulty}.\nWrite exactly ${PER_BATCH} multiple-choice questions (part ${i + 1} of ${BATCHES}; cover ${["the first third", "the middle third", "the final third"][i]} of the course syllabus so parts do not overlap). Each has 4 options, correctIndex (0-3), optionFeedback with one sentence per option saying why it is right or wrong, and a detailed explanation of the correct reasoning.`,
+                `Course: ${body.subject} at ${body.university}. Difficulty: ${body.difficulty}.\nWrite exactly ${PER_BATCH} multiple-choice questions (part ${i + 1} of ${BATCHES}; cover section ${i + 1} of ${BATCHES} of the course syllabus, in order so parts do not overlap). Each has 4 options, correctIndex (0-3), optionFeedback with one sentence per option saying why it is right or wrong, and a detailed explanation of the correct reasoning.`,
               ),
             ),
           );
