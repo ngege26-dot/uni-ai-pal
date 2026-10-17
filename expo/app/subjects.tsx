@@ -46,13 +46,22 @@ export default function Subjects() {
         title="Subjects A–Z"
         subtitle={`${university} · ${major}`}
         right={
-          <Pressable
-            accessibilityLabel="Settings"
-            onPress={() => router.push("/settings")}
-            className="min-h-[44px] min-w-[44px] items-center justify-center rounded-full active:bg-secondary"
-          >
-            <Text className="text-xl text-primary">⚙︎</Text>
-          </Pressable>
+          <View className="flex-row">
+            <Pressable
+              accessibilityLabel="Calendar"
+              onPress={() => router.push("/calendar")}
+              className="min-h-[44px] min-w-[44px] items-center justify-center rounded-full active:bg-secondary"
+            >
+              <Text className="text-xl text-primary">📅</Text>
+            </Pressable>
+            <Pressable
+              accessibilityLabel="Settings"
+              onPress={() => router.push("/settings")}
+              className="min-h-[44px] min-w-[44px] items-center justify-center rounded-full active:bg-secondary"
+            >
+              <Text className="text-xl text-primary">⚙︎</Text>
+            </Pressable>
+          </View>
         }
       />
       <View className="gap-3 px-4 pt-3">

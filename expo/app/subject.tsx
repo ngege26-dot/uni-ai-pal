@@ -55,6 +55,13 @@ export default function SubjectHub() {
           note="Credits, prerequisites, concepts, homework help — ask anything"
           onPress={() => router.push({ pathname: "/ask", params: { name } })}
         />
+
+        <Text className="pt-4 text-sm font-bold uppercase text-primary">Schedule</Text>
+        <Tile
+          title="Add to my calendar"
+          note="Set the days and times this class meets"
+          onPress={() => router.push({ pathname: "/class-form", params: { subject: name } })}
+        />
       </ScrollView>
     </View>
   );
