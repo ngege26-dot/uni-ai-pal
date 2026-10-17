@@ -64,6 +64,14 @@ function webPopupSignIn(url: string): Promise<BrokerResponse> {
   });
 }
 
+// The stable preview host (project--<id>-dev) sits behind the Lovable login gate, so the
+// sign-in service answers "Forbidden" there; start sign-in on the public id-preview host.
+function oauthBaseUrl(): string {
+  const base = apiBaseUrl();
+  const m = base.match(/^https:\/\/project--([0-9a-f-]{36})-dev\.lovable\.app$/);
+  return m ? `https://id-preview--${m[1]}.lovable.app` : base;
+}
+
 async function oauthSignIn(provider: Provider) {
   if (!isBackendAvailable()) throw new Error("Sign-in isn't available in this preview.");
   const state = Crypto.randomUUID();
@@ -71,7 +79,7 @@ async function oauthSignIn(provider: Provider) {
   const redirectUri = isWeb ? window.location.origin : Linking.createURL("oauth-callback");
   const params = new URLSearchParams({ provider, redirect_uri: redirectUri, state });
   if (isWeb) params.set("response_mode", "web_message");
-  const url = `${apiBaseUrl()}/~oauth/initiate?${params.toString()}`;
+  const url = `${oauthBaseUrl()}/~oauth/initiate?${params.toString()}`;
 
   let response: BrokerResponse;
   if (isWeb) {
