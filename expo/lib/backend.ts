@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { ApiError, BackendUnavailableError, api } from "./lovable-api";
+import { ApiError, UpdateRequiredError, BackendUnavailableError, api } from "./lovable-api";
 
 export type Subject = { name: string; code: string; credits: number; description: string; relatedToMajor: boolean };
 export type Topic = { title: string; summary: string; keyPoints: string[]; example: string };
@@ -53,8 +53,22 @@ export function useRequest<T>(load: () => Promise<T>, deps: unknown[]) {
     let active = true;
     setLoading(true);
     setError(null);
-    loadRef
-      .current()
+    // First-time generation can outlast the connection; the server keeps going and saves the
+    // result, so retry quietly a few times before showing an error.
+    const attempt = async (left: number): Promise<T> => {
+      try {
+        return await loadRef.current();
+      } catch (e) {
+        const permanent =
+          e instanceof UpdateRequiredError ||
+          e instanceof BackendUnavailableError ||
+          (e instanceof ApiError && e.status >= 400 && e.status < 500 && e.status !== 429);
+        if (permanent || left <= 0 || !active) throw e;
+        await new Promise((r) => setTimeout(r, 4000));
+        return attempt(left - 1);
+      }
+    };
+    attempt(5)
       .then((d) => active && setData(d))
       .catch((e) => active && setError(friendlyError(e)))
       .finally(() => active && setLoading(false));
