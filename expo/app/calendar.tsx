@@ -14,14 +14,15 @@ const END_HOUR = 23;
 
 const todayIndex = () => (new Date().getDay() + 6) % 7;
 
-function weekDates() {
+function weekDates(offset: number) {
   const now = new Date();
+  now.setDate(now.getDate() + offset * 7);
   const monday = new Date(now);
   monday.setDate(now.getDate() - todayIndex());
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
-    return d.getDate();
+    return d;
   });
 }
 
@@ -30,7 +31,9 @@ export default function Calendar() {
   const [items, setItems] = useState<ClassItem[] | null>(null);
   const [error, setError] = useState(false);
   const [day, setDay] = useState(todayIndex());
-  const dates = useMemo(weekDates, []);
+  const [week, setWeek] = useState(0);
+  const dates = useMemo(() => weekDates(week), [week]);
+  const monthLabel = dates[0].toLocaleDateString(undefined, { month: "long", year: "numeric" });
 
   const load = useCallback(() => {
     setError(false);
@@ -56,10 +59,38 @@ export default function Calendar() {
           </Pressable>
         }
       />
+      <View className="flex-row items-center px-2 pt-2">
+        <Pressable
+          accessibilityLabel="Previous week"
+          onPress={() => setWeek((w) => w - 1)}
+          className="min-h-[44px] min-w-[44px] items-center justify-center rounded-full active:bg-secondary"
+        >
+          <Text className="text-3xl leading-8 text-primary">‹</Text>
+        </Pressable>
+        <Text className="flex-1 text-center font-semibold">{monthLabel}</Text>
+        {week !== 0 ? (
+          <Pressable
+            onPress={() => {
+              setWeek(0);
+              setDay(todayIndex());
+            }}
+            className="min-h-[44px] justify-center px-2"
+          >
+            <Text className="text-primary">Today</Text>
+          </Pressable>
+        ) : null}
+        <Pressable
+          accessibilityLabel="Next week"
+          onPress={() => setWeek((w) => w + 1)}
+          className="min-h-[44px] min-w-[44px] items-center justify-center rounded-full active:bg-secondary"
+        >
+          <Text className="text-3xl leading-8 text-primary">›</Text>
+        </Pressable>
+      </View>
       <View className="flex-row justify-between border-b border-border px-2 py-2">
         {DAY_LETTER.map((l, i) => {
           const selected = i === day;
-          const isToday = i === todayIndex();
+          const isToday = week === 0 && i === todayIndex();
           const has = (items ?? []).some((c) => c.days.includes(i));
           return (
             <Pressable
@@ -75,7 +106,7 @@ export default function Calendar() {
                 <Text
                   className={`font-semibold ${selected ? "text-background" : isToday ? "text-destructive" : "text-foreground"}`}
                 >
-                  {dates[i]}
+                  {dates[i].getDate()}
                 </Text>
               </View>
               <View className={`h-1 w-1 rounded-full ${has ? "bg-muted-foreground" : ""}`} />
@@ -95,7 +126,9 @@ export default function Calendar() {
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
-          <Text className="px-4 pt-3 font-semibold">{DAY_SHORT[day]}</Text>
+          <Text className="px-4 pt-3 font-semibold">
+            {dates[day].toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}
+          </Text>
           <View style={{ height: hours.length * HOUR_H + 16, marginTop: 8 }}>
             {hours.map((h, i) => (
               <View key={h} className="absolute left-0 right-0 flex-row items-start" style={{ top: i * HOUR_H }}>
