@@ -75,7 +75,7 @@ async function priorityCompletion(
   if (!apiKey) throw new AiError(500, "AI is not configured.");
   const res = await fetch(`${GATEWAY_URL}/chat/completions`, {
     method: "POST",
-    signal,
+    signal: signal ?? null,
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
