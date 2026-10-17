@@ -15,6 +15,13 @@ export type Exam = { year: string; title: string; questions: { prompt: string; p
 export type PastExams = { available: boolean; note: string; exams: Exam[] };
 export type Grade = { score: number; didRight: string[]; didWrong: string[]; modelAnswer: string };
 export type ChatMessage = { role: "user" | "assistant"; content: string };
+export type Insights = {
+  predictedScore: number;
+  summary: string;
+  strengths: string[];
+  weaknesses: string[];
+  tips: { title: string; detail: string }[];
+};
 
 export const backend = {
   subjects: (university: string, major: string) =>
@@ -29,6 +36,12 @@ export const backend = {
     api.post<Grade>("/api/public/grade", { subject, question, answer, points }),
   ask: (university: string, subject: string, messages: ChatMessage[]) =>
     api.post<{ answer: string }>("/api/public/ask", { university, subject, messages }),
+  insights: (
+    university: string,
+    subject: string,
+    difficulty: string,
+    results: { question: string; picked: string; correct: string; isCorrect: boolean }[],
+  ) => api.post<Insights>("/api/public/insights", { university, subject, difficulty, results }),
   deleteAccount: () => api.post<{ ok: true }>("/api/public/delete-account", {}),
 };
 
