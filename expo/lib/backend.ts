@@ -32,6 +32,8 @@ export const backend = {
     api.post<{ questions: PracticeQuestion[] }>("/api/public/practice", { university, subject, difficulty }),
   pastExams: (university: string, subject: string, similar: boolean) =>
     api.post<PastExams>("/api/public/past-exams", { university, subject, similar }),
+  similarUnis: (subject: string, candidates: string[]) =>
+    api.post<{ universities: string[] }>("/api/public/similar-unis", { subject, candidates }),
   grade: (subject: string, question: string, answer: string, points: number) =>
     api.post<Grade>("/api/public/grade", { subject, question, answer, points }),
   ask: (university: string, subject: string, messages: ChatMessage[]) =>

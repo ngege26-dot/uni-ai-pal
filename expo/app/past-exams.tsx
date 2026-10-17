@@ -19,6 +19,13 @@ export default function PastExams() {
     [university, name, similar],
   );
 
+  const needSimilar = !loading && !error && !(data && data.available && data.exams.length > 0);
+  const candidates = TOP_US_UNIVERSITIES.filter((u) => u !== university);
+  const similarReq = useRequest(
+    () => (needSimilar ? backend.similarUnis(name, candidates) : Promise.resolve({ universities: [] })),
+    [needSimilar, name, university],
+  );
+
   const openExam = (i: number) =>
     router.push({ pathname: "/exam", params: { name, source: university, similar: similar ? "1" : "0", index: String(i) } });
 
@@ -48,16 +55,26 @@ export default function PastExams() {
             </Pressable>
           )}
         />
+      ) : similarReq.loading ? (
+        <View>
+          <LoadingNote text="Finding universities with tests for this subject…" />
+          <SkeletonList rows={5} />
+        </View>
+      ) : similarReq.error ? (
+        <ErrorState message={`We couldn't find similar universities. ${similarReq.error}`} onRetry={similarReq.retry} />
       ) : (
         <FlatList
-          data={TOP_US_UNIVERSITIES.filter((u) => u !== university)}
+          data={similarReq.data?.universities ?? []}
+          ListEmptyComponent={
+            <Text className="text-center text-muted-foreground">No top universities share tests for this subject yet.</Text>
+          }
           keyExtractor={(u) => u}
           contentContainerStyle={{ padding: 16, gap: 8, paddingBottom: insets.bottom + 24 }}
           ListHeaderComponent={
             <View className="gap-2 pb-3">
               <Text className="text-lg font-semibold">No practice material from {university} yet</Text>
               <Text className="text-xl font-bold text-primary">See similar uni's tests</Text>
-              <Text variant="caption">Top 20 universities in the US — pick one to practise with their exam style.</Text>
+              <Text variant="caption">Top US universities with tests for this subject — pick one to practise with their exam style.</Text>
             </View>
           }
           renderItem={({ item, index }) => (
