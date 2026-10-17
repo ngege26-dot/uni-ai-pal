@@ -16,6 +16,7 @@ import { Route as ApiPublicGradeRouteImport } from './routes/api/public/grade'
 import { Route as ApiPublicInsightsRouteImport } from './routes/api/public/insights'
 import { Route as ApiPublicPastExamsRouteImport } from './routes/api/public/past-exams'
 import { Route as ApiPublicPracticeRouteImport } from './routes/api/public/practice'
+import { Route as ApiPublicSimilarUnisRouteImport } from './routes/api/public/similar-unis'
 import { Route as ApiPublicSubjectsRouteImport } from './routes/api/public/subjects'
 import { Route as ApiPublicTopicsRouteImport } from './routes/api/public/topics'
 import { Route as ApiPublicVersionRouteImport } from './routes/api/public/version'
@@ -55,6 +56,11 @@ const ApiPublicPracticeRoute = ApiPublicPracticeRouteImport.update({
   path: '/api/public/practice',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicSimilarUnisRoute = ApiPublicSimilarUnisRouteImport.update({
+  id: '/api/public/similar-unis',
+  path: '/api/public/similar-unis',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicSubjectsRoute = ApiPublicSubjectsRouteImport.update({
   id: '/api/public/subjects',
   path: '/api/public/subjects',
@@ -79,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/api/public/insights': typeof ApiPublicInsightsRoute
   '/api/public/past-exams': typeof ApiPublicPastExamsRoute
   '/api/public/practice': typeof ApiPublicPracticeRoute
+  '/api/public/similar-unis': typeof ApiPublicSimilarUnisRoute
   '/api/public/subjects': typeof ApiPublicSubjectsRoute
   '/api/public/topics': typeof ApiPublicTopicsRoute
   '/api/public/version': typeof ApiPublicVersionRoute
@@ -91,6 +98,7 @@ export interface FileRoutesByTo {
   '/api/public/insights': typeof ApiPublicInsightsRoute
   '/api/public/past-exams': typeof ApiPublicPastExamsRoute
   '/api/public/practice': typeof ApiPublicPracticeRoute
+  '/api/public/similar-unis': typeof ApiPublicSimilarUnisRoute
   '/api/public/subjects': typeof ApiPublicSubjectsRoute
   '/api/public/topics': typeof ApiPublicTopicsRoute
   '/api/public/version': typeof ApiPublicVersionRoute
@@ -104,6 +112,7 @@ export interface FileRoutesById {
   '/api/public/insights': typeof ApiPublicInsightsRoute
   '/api/public/past-exams': typeof ApiPublicPastExamsRoute
   '/api/public/practice': typeof ApiPublicPracticeRoute
+  '/api/public/similar-unis': typeof ApiPublicSimilarUnisRoute
   '/api/public/subjects': typeof ApiPublicSubjectsRoute
   '/api/public/topics': typeof ApiPublicTopicsRoute
   '/api/public/version': typeof ApiPublicVersionRoute
@@ -118,6 +127,7 @@ export interface FileRouteTypes {
     | '/api/public/insights'
     | '/api/public/past-exams'
     | '/api/public/practice'
+    | '/api/public/similar-unis'
     | '/api/public/subjects'
     | '/api/public/topics'
     | '/api/public/version'
@@ -130,6 +140,7 @@ export interface FileRouteTypes {
     | '/api/public/insights'
     | '/api/public/past-exams'
     | '/api/public/practice'
+    | '/api/public/similar-unis'
     | '/api/public/subjects'
     | '/api/public/topics'
     | '/api/public/version'
@@ -142,6 +153,7 @@ export interface FileRouteTypes {
     | '/api/public/insights'
     | '/api/public/past-exams'
     | '/api/public/practice'
+    | '/api/public/similar-unis'
     | '/api/public/subjects'
     | '/api/public/topics'
     | '/api/public/version'
@@ -155,6 +167,7 @@ export interface RootRouteChildren {
   ApiPublicInsightsRoute: typeof ApiPublicInsightsRoute
   ApiPublicPastExamsRoute: typeof ApiPublicPastExamsRoute
   ApiPublicPracticeRoute: typeof ApiPublicPracticeRoute
+  ApiPublicSimilarUnisRoute: typeof ApiPublicSimilarUnisRoute
   ApiPublicSubjectsRoute: typeof ApiPublicSubjectsRoute
   ApiPublicTopicsRoute: typeof ApiPublicTopicsRoute
   ApiPublicVersionRoute: typeof ApiPublicVersionRoute
@@ -211,6 +224,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPracticeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/similar-unis': {
+      id: '/api/public/similar-unis'
+      path: '/api/public/similar-unis'
+      fullPath: '/api/public/similar-unis'
+      preLoaderRoute: typeof ApiPublicSimilarUnisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/subjects': {
       id: '/api/public/subjects'
       path: '/api/public/subjects'
@@ -243,6 +263,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicInsightsRoute: ApiPublicInsightsRoute,
   ApiPublicPastExamsRoute: ApiPublicPastExamsRoute,
   ApiPublicPracticeRoute: ApiPublicPracticeRoute,
+  ApiPublicSimilarUnisRoute: ApiPublicSimilarUnisRoute,
   ApiPublicSubjectsRoute: ApiPublicSubjectsRoute,
   ApiPublicTopicsRoute: ApiPublicTopicsRoute,
   ApiPublicVersionRoute: ApiPublicVersionRoute,
