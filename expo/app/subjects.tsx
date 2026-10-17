@@ -1,5 +1,5 @@
-import { Redirect, router } from "expo-router";
-import { useMemo, useState } from "react";
+import { Redirect, router, useFocusEffect } from "expo-router";
+import { useCallback, useMemo, useState } from "react";
 import { FlatList, KeyboardAvoidingView, Platform, Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/Input";
 import { Text } from "@/components/ui/Text";
 import { useAuth } from "@/lib/auth";
 import { backend, useRequest, type Subject } from "@/lib/backend";
+import { getRecent, type RecentSubject } from "@/lib/progress";
+import { COLORS, fmtTime, schedule, type ClassItem } from "@/lib/schedule";
 
 type Row = { kind: "letter"; letter: string } | { kind: "subject"; subject: Subject };
 
@@ -19,6 +21,57 @@ export default function Subjects() {
   const university = profile?.university ?? "";
   const major = profile?.major ?? "";
   const { data, error, loading, retry } = useRequest(() => backend.subjects(university, major), [university, major]);
+
+  const [recent, setRecent] = useState<RecentSubject[]>([]);
+  const [today, setToday] = useState<ClassItem[]>([]);
+  useFocusEffect(
+    useCallback(() => {
+      getRecent().then(setRecent);
+      const d = (new Date().getDay() + 6) % 7;
+      schedule
+        .list()
+        .then((all) => setToday(all.filter((c) => c.days.includes(d))))
+        .catch(() => setToday([]));
+    }, []),
+  );
+
+  const openSubject = (p: RecentSubject) => router.push({ pathname: "/subject", params: p });
+
+  const listHeader =
+    query.trim() || (recent.length === 0 && today.length === 0) ? null : (
+      <View className="gap-2 pt-3">
+        {today.length > 0 ? (
+          <Pressable onPress={() => router.push("/calendar")} className="gap-2 rounded-2xl bg-card p-4 active:opacity-70">
+            <Text className="text-sm font-bold uppercase text-primary">Today's classes</Text>
+            {today.map((c) => (
+              <View key={c.id} className="flex-row items-center gap-3">
+                <View className="h-3 w-3 rounded-full" style={{ backgroundColor: COLORS[c.color] ?? COLORS.blue }} />
+                <Text className="flex-1">{c.subject}</Text>
+                <Text variant="caption">
+                  {fmtTime(c.start_minute)}–{fmtTime(c.end_minute)}
+                </Text>
+              </View>
+            ))}
+          </Pressable>
+        ) : null}
+        {recent.length > 0 ? (
+          <View className="gap-2">
+            <Text className="pt-2 text-sm font-bold uppercase text-primary">Continue studying</Text>
+            <View className="flex-row flex-wrap gap-2">
+              {recent.map((r) => (
+                <Pressable
+                  key={r.name}
+                  onPress={() => openSubject(r)}
+                  className="min-h-[44px] justify-center rounded-full bg-primary/15 px-4 active:opacity-70"
+                >
+                  <Text className="font-semibold text-primary">{r.name}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        ) : null}
+      </View>
+    );
 
   const rows = useMemo<Row[]>(() => {
     const q = query.trim().toLowerCase();
@@ -96,6 +149,7 @@ export default function Subjects() {
           keyboardShouldPersistTaps="handled"
           keyExtractor={(r) => (r.kind === "letter" ? `L-${r.letter}` : `S-${r.subject.code}-${r.subject.name}`)}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 24 }}
+          ListHeaderComponent={listHeader}
           ListEmptyComponent={
             <Text className="pt-8 text-center text-muted-foreground">No subjects match "{query}".</Text>
           }
