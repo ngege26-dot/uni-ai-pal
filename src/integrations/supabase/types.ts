@@ -32,6 +32,42 @@ export type Database = {
         }
         Relationships: []
       }
+      class_schedule: {
+        Row: {
+          color: string
+          created_at: string
+          days: number[]
+          end_minute: number
+          id: string
+          location: string | null
+          start_minute: number
+          subject: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          days: number[]
+          end_minute: number
+          id?: string
+          location?: string | null
+          start_minute: number
+          subject: string
+          user_id?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          days?: number[]
+          end_minute?: number
+          id?: string
+          location?: string | null
+          start_minute?: number
+          subject?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
