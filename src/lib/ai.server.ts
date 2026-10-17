@@ -1,7 +1,6 @@
 // Server-only helpers for the phone app's API routes: auth check, CORS, AI calls, caching.
-import { createOpenAI } from "@ai-sdk/openai";
 import { createClient } from "@supabase/supabase-js";
-import { NoObjectGeneratedError, Output, streamText, type ModelMessage } from "ai";
+import { zodSchema, type ModelMessage } from "ai";
 import type { z } from "zod";
 
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1";
@@ -38,16 +37,6 @@ export async function verifyUser(request: Request): Promise<string | null> {
   return data.claims.sub as string;
 }
 
-function provider() {
-  const apiKey = process.env["LOVABLE_API_KEY"];
-  if (!apiKey) throw new AiError(500, "AI is not configured.");
-  return createOpenAI({
-    baseURL: GATEWAY_URL,
-    apiKey,
-    headers: { "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
-  });
-}
-
 export class AiError extends Error {
   constructor(
     public status: number,
@@ -59,23 +48,73 @@ export class AiError extends Error {
 
 function mapError(error: unknown): AiError {
   if (error instanceof AiError) return error;
-  const status = (error as { statusCode?: number })?.statusCode;
-  if (status === 429) return new AiError(429, "Too many requests right now. Please try again in a minute.");
-  if (status === 402) return new AiError(402, "AI credits have run out. Please try again later.");
-  if (status === 403) return new AiError(403, "AI access is currently blocked for this app.");
   console.error("AI call failed", error);
   return new AiError(500, "The AI could not answer right now. Please try again.");
 }
 
-const reasoningOptions = {
-  openai: {
-    store: false,
-    forceReasoning: true,
-    reasoningEffort: "low",
-    reasoningSummary: "auto",
-    include: ["reasoning.encrypted_content"],
-  },
-} as const;
+function statusError(status: number, body: string): AiError {
+  console.error(`AI gateway request failed [${status}]: ${body}`);
+  if (status === 429) return new AiError(429, "Too many requests right now. Please try again in a minute.");
+  if (status === 402) return new AiError(402, "AI credits have run out. Please try again later.");
+  if (status === 403) return new AiError(403, "AI access is currently blocked for this app.");
+  return new AiError(500, "The AI could not answer right now. Please try again.");
+}
+
+type ChatMsg = { role: "system" | "user" | "assistant"; content: string };
+
+/**
+ * Streams a Chat Completions call on the priority serving tier (roughly twice as fast as
+ * standard, at premium pricing) and returns the full text.
+ */
+async function priorityCompletion(
+  messages: ChatMsg[],
+  extra: Record<string, unknown> = {},
+  signal?: AbortSignal,
+): Promise<string> {
+  const apiKey = process.env["LOVABLE_API_KEY"];
+  if (!apiKey) throw new AiError(500, "AI is not configured.");
+  const res = await fetch(`${GATEWAY_URL}/chat/completions`, {
+    method: "POST",
+    signal: signal ?? null,
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "X-Lovable-AIG-SDK": "fetch",
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      stream: true,
+      reasoning_effort: "low",
+      service_tier: "priority",
+      messages,
+      ...extra,
+    }),
+  });
+  if (!res.ok || !res.body) throw statusError(res.status, await res.text());
+  const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+  let buffer = "";
+  let text = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += value;
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const data = line.slice(6).trim();
+      if (!data || data === "[DONE]") continue;
+      const chunk = JSON.parse(data) as {
+        choices?: { delta?: { content?: string; refusal?: string } }[];
+        error?: { message?: string };
+      };
+      if (chunk.error) throw new AiError(500, "The AI could not answer right now. Please try again.");
+      if (chunk.choices?.[0]?.delta?.refusal) throw new AiError(422, "The AI declined to answer this request.");
+      text += chunk.choices?.[0]?.delta?.content ?? "";
+    }
+  }
+  return text;
+}
 
 /** Streams a structured-output call and returns the parsed object. */
 export async function generateStructured<T>(
@@ -85,23 +124,18 @@ export async function generateStructured<T>(
   prompt: string,
 ): Promise<T> {
   try {
-    const result = streamText({
-      model: provider().responses(MODEL),
-      instructions,
-      prompt,
-      output: Output.object({ schema }),
-      // No abort: if the phone's connection drops on a slow first load, finish and cache the result anyway.
-      providerOptions: reasoningOptions,
-    } as Parameters<typeof streamText>[0]);
-    try {
-      return (await result.output) as T;
-    } catch (error) {
-      if (NoObjectGeneratedError.isInstance(error) && error.text) {
-        const parsed = schema.safeParse(JSON.parse(error.text));
-        if (parsed.success) return parsed.data;
-      }
-      throw error;
-    }
+    const jsonSchema = await zodSchema(schema).jsonSchema;
+    // No abort: if the phone's connection drops on a slow first load, finish and cache the result anyway.
+    const text = await priorityCompletion(
+      [
+        { role: "system", content: instructions },
+        { role: "user", content: prompt },
+      ],
+      { response_format: { type: "json_schema", json_schema: { name: "result", strict: true, schema: jsonSchema } } },
+    );
+    const parsed = schema.safeParse(JSON.parse(text));
+    if (!parsed.success) throw new AiError(500, "The AI returned an unexpected answer. Please try again.");
+    return parsed.data;
   } catch (error) {
     throw mapError(error);
   }
@@ -110,17 +144,21 @@ export async function generateStructured<T>(
 /** Streams a text call server-side and returns the final text. */
 export async function generateChat(request: Request, instructions: string, messages: ModelMessage[]) {
   try {
-    const result = streamText({
-      model: provider().responses(MODEL),
-      instructions,
-      messages,
-      abortSignal: request.signal,
-      providerOptions: reasoningOptions,
-    } as Parameters<typeof streamText>[0]);
-    const text = await result.text;
+    const text = await priorityCompletion(
+      [
+        { role: "system", content: instructions },
+        ...messages.map((m) => ({
+          role: m.role === "assistant" ? ("assistant" as const) : ("user" as const),
+          content: typeof m.content === "string" ? m.content : JSON.stringify(m.content),
+        })),
+      ],
+      {},
+      request.signal,
+    );
     if (!text.trim()) throw new AiError(500, "The AI returned an empty answer. Please try again.");
     return text;
   } catch (error) {
+    if ((error as Error)?.name === "AbortError") throw new AiError(499, "Request cancelled.");
     throw mapError(error);
   }
 }
