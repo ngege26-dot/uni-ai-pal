@@ -79,7 +79,7 @@ const reasoningOptions = {
 
 /** Streams a structured-output call and returns the parsed object. */
 export async function generateStructured<T>(
-  request: Request,
+  _request: Request,
   schema: z.ZodType<T>,
   instructions: string,
   prompt: string,
@@ -90,7 +90,7 @@ export async function generateStructured<T>(
       instructions,
       prompt,
       output: Output.object({ schema }),
-      abortSignal: request.signal,
+      // No abort: if the phone's connection drops on a slow first load, finish and cache the result anyway.
       providerOptions: reasoningOptions,
     } as Parameters<typeof streamText>[0]);
     try {
