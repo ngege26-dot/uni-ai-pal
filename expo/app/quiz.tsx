@@ -1,13 +1,13 @@
 import { useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ErrorState, Header, LoadingNote, SkeletonList } from "@/components/screen";
 import { Button } from "@/components/ui/Button";
 import { Text } from "@/components/ui/Text";
 import { useAuth } from "@/lib/auth";
-import { backend, useRequest } from "@/lib/backend";
+import { backend, friendlyError, useRequest, type Insights } from "@/lib/backend";
 
 export default function Quiz() {
   const { name, difficulty } = useLocalSearchParams<{ name: string; difficulty: string }>();
@@ -20,13 +20,102 @@ export default function Quiz() {
   );
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<Record<number, number>>({});
+  const [insights, setInsights] = useState<Insights | null>(null);
+  const [analysing, setAnalysing] = useState(false);
+  const [insightError, setInsightError] = useState<string | null>(null);
 
   const label = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
   const questions = data?.questions ?? [];
   const q = questions[index];
   const choice = picked[index];
   const answered = choice !== undefined;
+  const answeredCount = Object.keys(picked).length;
   const correctCount = Object.entries(picked).filter(([i, c]) => questions[Number(i)]?.correctIndex === c).length;
+
+  const finish = async () => {
+    setAnalysing(true);
+    setInsightError(null);
+    try {
+      const results = Object.entries(picked).map(([i, c]) => {
+        const qq = questions[Number(i)];
+        return {
+          question: qq.question,
+          picked: qq.options[c] ?? "",
+          correct: qq.options[qq.correctIndex] ?? "",
+          isCorrect: c === qq.correctIndex,
+        };
+      });
+      setInsights(await backend.insights(university, name, difficulty, results));
+    } catch (e) {
+      setInsightError(`We couldn't create your score prediction. ${friendlyError(e)}`);
+    } finally {
+      setAnalysing(false);
+    }
+  };
+
+  const restart = () => {
+    setPicked({});
+    setIndex(0);
+    setInsights(null);
+  };
+
+  if (insights) {
+    const pct = Math.round((correctCount / Math.max(1, answeredCount)) * 100);
+    return (
+      <View className="flex-1 bg-background">
+        <Header title="Your results" subtitle={`${name} · ${label}`} />
+        <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: insets.bottom + 24 }}>
+          <View className="flex-row gap-3">
+            <View className="flex-1 items-center gap-1 rounded-2xl bg-card p-4">
+              <Text variant="caption">This test</Text>
+              <Text className="text-3xl font-bold">{pct}%</Text>
+              <Text variant="caption">{`${correctCount} of ${answeredCount} correct`}</Text>
+            </View>
+            <View className="flex-1 items-center gap-1 rounded-2xl bg-primary p-4">
+              <Text className="text-primary-foreground">Predicted exam</Text>
+              <Text className="text-3xl font-bold text-primary-foreground">{insights.predictedScore}%</Text>
+              <Text className="text-sm text-primary-foreground">estimate by AI</Text>
+            </View>
+          </View>
+          <Text>{insights.summary}</Text>
+
+          {insights.strengths.length ? (
+            <View className="gap-1 rounded-2xl bg-card p-4">
+              <Text className="font-semibold text-primary">Strengths</Text>
+              {insights.strengths.map((s, i) => (
+                <Text key={i}>{`• ${s}`}</Text>
+              ))}
+            </View>
+          ) : null}
+          {insights.weaknesses.length ? (
+            <View className="gap-1 rounded-2xl bg-card p-4">
+              <Text className="font-semibold text-destructive">Needs work</Text>
+              {insights.weaknesses.map((s, i) => (
+                <Text key={i}>{`• ${s}`}</Text>
+              ))}
+            </View>
+          ) : null}
+
+          <Text className="pt-2 text-sm font-bold uppercase text-primary">How to improve</Text>
+          {insights.tips.map((t, i) => (
+            <View key={i} className="gap-1 rounded-2xl bg-card p-4">
+              <Text className="font-semibold">{`${i + 1}. ${t.title}`}</Text>
+              <Text>{t.detail}</Text>
+            </View>
+          ))}
+
+          <View className="flex-row gap-3 pt-2">
+            <Button variant="tinted" className="flex-1" onPress={() => setInsights(null)}>
+              Review answers
+            </Button>
+            <Button className="flex-1" onPress={restart}>
+              Retake test
+            </Button>
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1 bg-background">
@@ -107,6 +196,16 @@ export default function Quiz() {
             >
               Next
             </Button>
+          </View>
+
+          <View className="gap-2 pt-2">
+            <Button variant="tinted" disabled={answeredCount === 0 || analysing} onPress={finish}>
+              {analysing ? "Predicting your score…" : `Finish & predict my score (${answeredCount} answered)`}
+            </Button>
+            {analysing ? <ActivityIndicator /> : null}
+            {insightError ? (
+              <Text className="text-sm text-destructive">{insightError}</Text>
+            ) : null}
           </View>
         </ScrollView>
       )}

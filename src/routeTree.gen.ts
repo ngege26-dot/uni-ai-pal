@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicAskRouteImport } from './routes/api/public/ask'
 import { Route as ApiPublicDeleteAccountRouteImport } from './routes/api/public/delete-account'
 import { Route as ApiPublicGradeRouteImport } from './routes/api/public/grade'
+import { Route as ApiPublicInsightsRouteImport } from './routes/api/public/insights'
 import { Route as ApiPublicPastExamsRouteImport } from './routes/api/public/past-exams'
 import { Route as ApiPublicPracticeRouteImport } from './routes/api/public/practice'
 import { Route as ApiPublicSubjectsRouteImport } from './routes/api/public/subjects'
@@ -37,6 +38,11 @@ const ApiPublicDeleteAccountRoute = ApiPublicDeleteAccountRouteImport.update({
 const ApiPublicGradeRoute = ApiPublicGradeRouteImport.update({
   id: '/api/public/grade',
   path: '/api/public/grade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicInsightsRoute = ApiPublicInsightsRouteImport.update({
+  id: '/api/public/insights',
+  path: '/api/public/insights',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicPastExamsRoute = ApiPublicPastExamsRouteImport.update({
@@ -70,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/api/public/ask': typeof ApiPublicAskRoute
   '/api/public/delete-account': typeof ApiPublicDeleteAccountRoute
   '/api/public/grade': typeof ApiPublicGradeRoute
+  '/api/public/insights': typeof ApiPublicInsightsRoute
   '/api/public/past-exams': typeof ApiPublicPastExamsRoute
   '/api/public/practice': typeof ApiPublicPracticeRoute
   '/api/public/subjects': typeof ApiPublicSubjectsRoute
@@ -81,6 +88,7 @@ export interface FileRoutesByTo {
   '/api/public/ask': typeof ApiPublicAskRoute
   '/api/public/delete-account': typeof ApiPublicDeleteAccountRoute
   '/api/public/grade': typeof ApiPublicGradeRoute
+  '/api/public/insights': typeof ApiPublicInsightsRoute
   '/api/public/past-exams': typeof ApiPublicPastExamsRoute
   '/api/public/practice': typeof ApiPublicPracticeRoute
   '/api/public/subjects': typeof ApiPublicSubjectsRoute
@@ -93,6 +101,7 @@ export interface FileRoutesById {
   '/api/public/ask': typeof ApiPublicAskRoute
   '/api/public/delete-account': typeof ApiPublicDeleteAccountRoute
   '/api/public/grade': typeof ApiPublicGradeRoute
+  '/api/public/insights': typeof ApiPublicInsightsRoute
   '/api/public/past-exams': typeof ApiPublicPastExamsRoute
   '/api/public/practice': typeof ApiPublicPracticeRoute
   '/api/public/subjects': typeof ApiPublicSubjectsRoute
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
     | '/api/public/ask'
     | '/api/public/delete-account'
     | '/api/public/grade'
+    | '/api/public/insights'
     | '/api/public/past-exams'
     | '/api/public/practice'
     | '/api/public/subjects'
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/api/public/ask'
     | '/api/public/delete-account'
     | '/api/public/grade'
+    | '/api/public/insights'
     | '/api/public/past-exams'
     | '/api/public/practice'
     | '/api/public/subjects'
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/api/public/ask'
     | '/api/public/delete-account'
     | '/api/public/grade'
+    | '/api/public/insights'
     | '/api/public/past-exams'
     | '/api/public/practice'
     | '/api/public/subjects'
@@ -140,6 +152,7 @@ export interface RootRouteChildren {
   ApiPublicAskRoute: typeof ApiPublicAskRoute
   ApiPublicDeleteAccountRoute: typeof ApiPublicDeleteAccountRoute
   ApiPublicGradeRoute: typeof ApiPublicGradeRoute
+  ApiPublicInsightsRoute: typeof ApiPublicInsightsRoute
   ApiPublicPastExamsRoute: typeof ApiPublicPastExamsRoute
   ApiPublicPracticeRoute: typeof ApiPublicPracticeRoute
   ApiPublicSubjectsRoute: typeof ApiPublicSubjectsRoute
@@ -175,6 +188,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/grade'
       fullPath: '/api/public/grade'
       preLoaderRoute: typeof ApiPublicGradeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/insights': {
+      id: '/api/public/insights'
+      path: '/api/public/insights'
+      fullPath: '/api/public/insights'
+      preLoaderRoute: typeof ApiPublicInsightsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/past-exams': {
@@ -220,6 +240,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAskRoute: ApiPublicAskRoute,
   ApiPublicDeleteAccountRoute: ApiPublicDeleteAccountRoute,
   ApiPublicGradeRoute: ApiPublicGradeRoute,
+  ApiPublicInsightsRoute: ApiPublicInsightsRoute,
   ApiPublicPastExamsRoute: ApiPublicPastExamsRoute,
   ApiPublicPracticeRoute: ApiPublicPracticeRoute,
   ApiPublicSubjectsRoute: ApiPublicSubjectsRoute,
